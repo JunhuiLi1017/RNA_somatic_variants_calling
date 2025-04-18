@@ -1,0 +1,11 @@
+include: "rules/common.smk"
+include: "rules/qc.smk"
+#include: "rules/map_reads.smk"
+#include: "rules/variant_calling_haplotypecaller.smk"
+#include: "rules/variant_calling_mutect2.smk"
+#include: "rules/variant_calling_deepvariant.smk"
+include: "rules/variant_calling_haplotypecaller_filter_common_snp.smk"
+
+rule all:
+    input:
+        expand("{outpath}/03_variants/01_haplotypecaller/06_annovar/{sample}.{ref_version}_multianno.txt", outpath=outpath, sample=sample, ref_version=ref_version)
