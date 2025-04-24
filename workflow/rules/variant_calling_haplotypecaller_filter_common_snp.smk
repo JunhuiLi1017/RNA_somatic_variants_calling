@@ -51,8 +51,8 @@ rule annotate_clinvar:
 		-buildver {ref_version} \
 		-out {params.outputanno} \
 		-remove \
-		-protocol refGene,dbnsfp42a,clinvar_20240917 \
-		-operation g,f,f \
+		-protocol refGene,dbnsfp42a,clinvar_20240917,gnomad30_genome,collins_dosage \
+		-operation g,f,f,f,f \
 		-nastring . \
 		-vcfinput
 		"""
