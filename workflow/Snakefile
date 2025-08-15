@@ -1,13 +1,12 @@
-include: "rules/common.smk"
-include: "rules/qc.smk"
-include: "rules/map_reads.smk"
-#include: "rules/variant_calling_haplotypecaller.smk"
-#include: "rules/variant_calling_mutect2.smk"
-include: "rules/variant_calling_deepvariant.smk"
+include: "rules/00_common.smk"
+include: "rules/01_qc.smk"
+include: "rules/02_map_reads.smk"
+include: "rules/03_variant_calling_haplotypecaller.smk"
+include: "rules/04_variant_validation.smk"
 
 rule all:
     input:
-        #expand("{outpath}/03_variants/01_haplotypecaller/{sample}/{sample}.anno.{ref_version}_multianno.txt", outpath=outpath, sample=sample, ref_version=ref_version),
-        #expand("{outpath}/03_variants/02_mutect2/{sample}/{sample}.anno.{ref_version}_multianno.txt", outpath=outpath, sample=sample, ref_version=ref_version)
-        #expand("{outpath}/03_variants/04_deepvariant/{sample}/{sample}.{chr}.{ref_version}.output.vcf.gz", outpath=outpath, sample=sample, ref_version=ref_version, chr=chromosomes),
-        expand("{outpath}/03_variants/03_deepvariant/{sample}/{sample}.{chr}.{ref_version}.output.vcf.gz", outpath=outpath, sample=sample, ref_version=ref_version, chr=chromosomes)
+        expand("{outpath}/01_multiqc/multiqc_report_fq.html", outpath=outpath),
+        expand("{outpath}/02_map/multiqc_report_map.html", outpath=outpath),
+        expand("{outpath}/03_variants/haplotypecaller/summary.txt", outpath=outpath),
+        expand("{outpath}/04_validation/summary.txt", outpath=outpath)
