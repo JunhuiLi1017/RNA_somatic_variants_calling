@@ -1,15 +1,18 @@
-units: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/00script/IDT_target/20250714/config/units.tsv
-resource: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/00script/IDT_target/20250714/config/resources.yaml
+units: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/00script/00_pipeline/RNA_variants_calling/config/units.tsv
+resource: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/00script/00_pipeline/RNA_variants_calling/config/resources.yaml
 
 outpath: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/02ProcessedData/RNA_variant_calling/20250808
 
 ##-------------------
 ## general parameters
 ##-------------------
+reads_len: 124
 ref_version: hg38
 reference: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/bundle/hg38/Homo_sapiens_assembly38.fasta
-reference_dir: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/bundle/hg38/
+reference_dir: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/bundle/hg38/star_2.7a_idx
 interval: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/bundle/hg38/interval
+gtf: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/bundle/hg38/gencode.v48.annotation.gtf
+
 
 ref_version: hg38
 reference: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/bundle/hg38/Homo_sapiens_assembly38.fasta
@@ -26,6 +29,8 @@ allrepeats_forindel: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar
 umap: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/Umap/hg38/k24.umap.wg.bw
 avail_acess_1000g: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/02_filter/hg38/20160622.allChr.mask.bed
 
+
+annovar_dir: /pi/michael.lodato-umw/junhui.li11-umw/BautistaSotelo_Cesar/20201130_MosaicVariant_DNA/03Database/database_fromHPCC/dataset/ANNOVAR/annovar/humandb_hg38
 
 ##---------software----------
 gatk_4.0.12.0_path: /home/junhui.li11-umw/anaconda3/envs/gatk4.0.xx/share/gatk4-4.0.12.0-0/gatk-package-4.0.12.0-local.jar
@@ -50,8 +55,6 @@ deepvariant_model: WES
 callers:
   - haplotypecaller
   - deepvariant
-  - deepsomatic
-  - mutect2
 
 ##-------------------
 ## container
@@ -63,6 +66,7 @@ fastqc_0.11.9: docker://biocontainers/fastqc:v0.11.9_cv8
 multiqc_1.22.3: docker://multiqc/multiqc:latest
 
 ##-------02_map-------
+STAR_2.7.10a: docker://alexdobin/star:2.7.10a_alpha_220506
 samtools_1.20: docker://junhuili/terra_samtools:1.20
 sambamba_1.0.1: docker://junhuili/sambamba:1.0.1
 terra_deeptools_0.1: docker://junhuili/terra_deeptools:0.1

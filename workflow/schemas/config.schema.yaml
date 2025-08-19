@@ -5,12 +5,24 @@ description: snakemake configuration file
 type: object
 
 properties:
-  samples:
+  resource:
     type: string
   units:
     type: string
-  resource:
+  callers:
+    type: array
+    items:
+      type: string
+      enum: ["haplotypecaller", "deepvariant"]
+  outpath:
+    type: string
+  ref_version:
+    type: string
+  reference:
+    type: string
+  interval:
     type: string
 required:
-  - units
   - resource
+  - units
+  - callers

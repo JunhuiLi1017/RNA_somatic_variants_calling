@@ -19,7 +19,6 @@ units['trim_front1'] = pd.to_numeric(units['trim_front1'], errors='coerce').fill
 units['trim_front2'] = pd.to_numeric(units['trim_front2'], errors='coerce').fillna(0).astype(int)
 units['trim_tail1'] = pd.to_numeric(units['trim_tail1'], errors='coerce').fillna(0).astype(int)
 units['trim_tail2'] = pd.to_numeric(units['trim_tail2'], errors='coerce').fillna(0).astype(int)
-units['pcr_based'] = units['pcr_based'].map({'Yes': True, 'No': False, 'TRUE': True, 'FALSE': False, '1': True, '0': False, 'True': True, 'False': False}).astype(bool)
 
 validate(units, schema = "../schemas/units.schema.yaml")
 
@@ -30,8 +29,7 @@ Outpath = config['outpath']
 intervals_dir=config["interval"]
 Ref_version=config["ref_version"]
 Callers=config["callers"]
-Coverage=config['coverage']
-Model=config['mosaic_pred_model']
+
 hg38_sub_gnomad211_exome_genome_dir=config['hg38_sub_gnomad211_exome_genome_dir']
 # Get the list of all interval files
 interval_files = glob.glob(os.path.join(intervals_dir, "*.intervals.list"))
@@ -61,8 +59,13 @@ def get_fastq(wildcards):
     return {"r1": fastqs.fq1}
 
 def get_site_bed(wildcards):
-    bed = units.loc[(wildcards.sample, wildcards.library, wildcards.flowlane), ["site_bed"]].dropna()
-    return {"bed": bed.site_bed}
+    """Get site_bed file for given sample."""
+    bed = units.loc[units['sample'] == wildcards.sample, "site_bed"].dropna()
+    if len(bed) == 0:
+        raise ValueError(f"No site_bed found for sample {wildcards.sample}")
+    if len(bed) > 1:
+        raise ValueError(f"Multiple site_bed files found for sample {wildcards.sample}: {bed.tolist()}")
+    return bed.iloc[0]
 
 def get_fastqc_fastp(wildcards):
     if is_pair_end:
@@ -73,21 +76,22 @@ def get_fastqc_fastp(wildcards):
     else:
         return [f"{Outpath}/01_multiqc/fastp/{wildcards.sample}_{wildcards.library}_{wildcards.flowlane}.R1.fastq.gz"]
 
+# Collect all FastQC outputs from all valid combinations for MultiQC
+# This avoids generating invalid wildcard combinations
+# and supports mixed SE/PE inputs by checking fq2 per row
+
 def get_multiqc_fastp(wildcards):
-    if is_pair_end:
-        GROUP = ["R1", "R2"]
-    else:
-        GROUP = ["R1"]
-    return expand(
-            [
-                f"{Outpath}/01_multiqc/fastqc/{{sample}}_{{library}}_{{flowlane}}.{{group}}_fastqc.html",
-                f"{Outpath}/01_multiqc/fastqc/{{sample}}_{{library}}_{{flowlane}}.{{group}}_fastqc.zip"
-            ],
-            sample=[u.sample for u in units.itertuples()],
-            library=[u.library for u in units.itertuples()],
-            flowlane=[u.flowlane for u in units.itertuples()],
-            group = GROUP
-        )
+    outputs = []
+    for _, row in units.iterrows():
+        sample = row['sample']
+        library = row['library']
+        flowlane = row['flowlane']
+        outputs.append(f"{Outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R1_fastqc.html")
+        outputs.append(f"{Outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R1_fastqc.zip")
+        if pd.notnull(row.get('fq2')) and row['fq2'] != "":
+            outputs.append(f"{Outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R2_fastqc.html")
+            outputs.append(f"{Outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R2_fastqc.zip")
+    return outputs
 
 def get_vcf_inputs(wildcards):
     callers = config["callers"]
@@ -105,9 +109,5 @@ def get_raw_bam(wildcards):
 
 def get_reads_group(wildcards):
     """Denote sample name and platform in read group."""
-    return r"-R '@RG\tID:{sample}_{library}_{flowlane}\tSM:{sample}\tPL:{platform}\tLB:{library}'".format(
-        sample=wildcards.sample,
-        library=wildcards.library,
-        flowlane=wildcards.flowlane,
-        platform=units.loc[(wildcards.sample, wildcards.library, wildcards.flowlane), "platform"]
-    )
+    platform = units.loc[(wildcards.sample, wildcards.library, wildcards.flowlane), "platform"]
+    return f"'ID:{wildcards.sample}_{wildcards.library}_{wildcards.flowlane}'   'SM:{wildcards.sample}'  'PL:{platform}'  'LB:{wildcards.library}'"

@@ -9,7 +9,7 @@ rule haplotypecaller:
 	params:
 		ref=config['reference'],
 		dbsnp138=config['dbsnp138'],
-		interval=intervals_dir + "/{chr}.intervals.list"
+		interval=intervals_dir + "/{chr}.intervals.list",
 		command_mem=lambda wildcards, resources, threads: (resources.mem_mb * threads - 2000)
 	threads:
 		resource['resource']['very_high']['threads']

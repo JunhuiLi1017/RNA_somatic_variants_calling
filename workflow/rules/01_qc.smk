@@ -72,7 +72,7 @@ rule fastp:
 
 rule fastqc:
 	input:
-		get_fastqc_fastp
+		lambda wildcards: get_fastqc_fastp(wildcards) if (wildcards.sample, wildcards.library, wildcards.flowlane) in units.index else []
 	output:
 		["{outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R1_fastqc.html", "{outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R2_fastqc.html"],
 		["{outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R1_fastqc.zip", "{outpath}/01_multiqc/fastqc/{sample}_{library}_{flowlane}.R2_fastqc.zip"]
@@ -98,7 +98,7 @@ rule multiqc:
 		"{outpath}/logs/multiqc/multiqc.log"
 	params:
 		out_multiqc="{outpath}/01_multiqc",
-        title="multiqc for fastq file"
+        title="multiqc for fastq file",
 		in_fastqc="{outpath}/01_multiqc/fastqc"
 	threads: 
 		resource['resource']['medium']['threads']
@@ -112,6 +112,6 @@ rule multiqc:
 			--outdir {params.out_multiqc} \
 			--title "{params.title}" \
 			--filename multiqc_report_fq.html \
-			--data-dir {output.in_fastqc} \
+			--data-dir {params.in_fastqc} \
 			--force
 		"""

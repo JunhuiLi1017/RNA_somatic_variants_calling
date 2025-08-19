@@ -5,9 +5,46 @@ properties:
   sample:
     type: string
     description: sample name/id the unit has been sequenced from
-  unsort_bam:
+  library:
     type: string
-    description: path to unsort bam file
+    description: library id
+  flowlane:
+    type: string
+    description: flowlane id
+  platform:
+    type: string
+    enum: ["CAPILLARY", "LS454", "ILLUMINA", "SOLID", "HELICOS", "IONTORRENT", "ONT", "PACBIO"]
+    description: platform used for sequencing
+  fq1:
+    type: string
+    description: path to FASTQ file
+  fq2:
+    type: string
+    description: path to second FASTQ file (leave empty in case of single-end)
+  trim_front1:
+    type: integer
+    description: trim value for front of fq1, if 0, no trimming
+  trim_front2:
+    type: integer
+    description: trim value for front of fq2, if 0, no trimming
+  trim_tail1:
+    type: integer
+    description: trim value for tail of fq1, if 0, no trimming
+  trim_tail2:
+    type: integer
+    description: trim value for tail of fq2, if 0, no trimming
+  site_bed:
+    type: string
+    description: path to site bed file
+
 required:
   - sample
-  - unsort_bam
+  - library
+  - flowlane
+  - platform
+  - fq1
+  - trim_front1
+  - trim_front2
+  - trim_tail1
+  - trim_tail2
+  - site_bed
