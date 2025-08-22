@@ -15,7 +15,7 @@ rule samtools_mpileup:
 	resources:
 		mem_mb=resource['resource']['high']['mem_mb']
 	container:
-		config["samtools_1.20"]
+		container_image["samtools_1.20"]
 	shell:
 		"""
 		samtools mpileup -l {input.site_bed} -f {params.ref} {input.bam} > {output.mpileup} 2> {log}
@@ -36,7 +36,7 @@ rule reads_count:
 	resources:
 		mem_mb=resource['resource']['high']['mem_mb']
 	container:
-		config["python_alpine3.21"]
+		container_image["python_alpine3.21"]
 	shell:
 		"""
 		python {params.reads_count} --input {input} --bed {params.site_bed} --output {output}

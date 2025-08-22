@@ -1,12 +1,6 @@
 include: "rules/00_common.smk"
-include: "rules/01_qc.smk"
-include: "rules/02_map_reads.smk"
-include: "rules/03_variant_calling_haplotypecaller.smk"
-include: "rules/04_variant_validation.smk"
+include: "rules/05_spliceai.smk"
 
 rule all:
     input:
-        expand("{outpath}/01_multiqc/multiqc_report_fq.html", outpath=Outpath),
-        expand("{outpath}/02_map/multiqc_report_map.html", outpath=Outpath),
-        expand("{outpath}/03_variants/haplotypecaller/summary.txt", outpath=Outpath),
-        expand("{outpath}/04_validation/summary.txt", outpath=Outpath)
+        expand("{outpath}/05_splice_variant/summary.txt", outpath=Outpath)

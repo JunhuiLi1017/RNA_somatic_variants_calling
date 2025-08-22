@@ -11,6 +11,16 @@ with open(config["resource"]) as f:
     resource = yaml.safe_load(f)
 validate(resource, schema = "../schemas/resource.schema.yaml")
 
+# Load container configuration if available
+container_image = {}
+if "container" in config:
+    try:
+        with open(config["container"]) as f:
+            container_image = yaml.safe_load(f) or {}
+    except Exception as e:
+        print(f"Warning: Could not load container config from {config['container']}: {e}")
+        container_image = {}
+
 units = pd.read_table(config["units"], dtype = str).set_index(
     ["sample", "library", "flowlane"], drop = False
 )
@@ -30,7 +40,6 @@ intervals_dir=config["interval"]
 Ref_version=config["ref_version"]
 Callers=config["callers"]
 
-hg38_sub_gnomad211_exome_genome_dir=config['hg38_sub_gnomad211_exome_genome_dir']
 # Get the list of all interval files
 interval_files = glob.glob(os.path.join(intervals_dir, "*.intervals.list"))
 CHROMOSOMES = [os.path.basename(f).replace(".intervals.list", "") for f in interval_files]

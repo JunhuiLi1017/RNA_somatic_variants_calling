@@ -17,7 +17,7 @@ rule map_raw:
 	resources:
 		mem_mb=resource['resource']['very_high']['mem_mb']
 	container:
-		config['STAR_2.7.10a']
+		container_image['STAR_2.7.10a']
 	shell:
 		"""
 		STAR --runThreadN {threads} \
@@ -46,7 +46,7 @@ rule map_raw_index:
 	resources:
 		mem_mb=resource['resource']['medium']['mem_mb']
 	container:
-		config["samtools_1.20"]
+		container_image["samtools_1.20"]
 	shell:
 		"""
 		samtools index {input}
@@ -71,11 +71,11 @@ rule mark_dup:
 	resources:
 		mem_mb=resource['resource']['high']['mem_mb']
 	params:
-		tmpdir="{outpath}/02_map/02_dup/{sample}/tmpdir_{sample}",
+		tmpdir="{outpath}/02_map/02_dup/tmpdir_{sample}",
 		input_args=lambda wildcards, input: " ".join(f"--INPUT {bam}" for bam in input),
 		command_mem=lambda wildcards, resources, threads: (resources.mem_mb * threads - 4000)
 	container:
-		config["gatk_4.1.8.1"]
+		container_image["gatk_4.1.8.1"]
 	shell:
 		"""
 		mkdir -p {params.tmpdir}
@@ -88,6 +88,7 @@ rule mark_dup:
         --VALIDATION_STRINGENCY LENIENT \
         --ASSUME_SORTED true \
 		--CREATE_INDEX true > {log} 2>&1
+        rm -r {params.tmpdir}
 		"""
 
 rule split_NCigarReads:
@@ -100,7 +101,6 @@ rule split_NCigarReads:
 	log:
 		"{outpath}/02_map/logs/{sample}.splitNCigar.log"
 	params:
-		gatk=config['gatk_current_using'],
 		ref=config['reference'],
 		command_mem=lambda wildcards, resources, threads: (resources.mem_mb * threads - 4000)
 	threads:
@@ -108,14 +108,14 @@ rule split_NCigarReads:
 	resources:
 		mem_mb=resource['resource']['very_high']['mem_mb']
 	container:
-		config["gatk_4.1.8.1"]
+		container_image["gatk_4.1.8.1"]
 	shell:
 		"""
 		gatk --java-options "-Xms{params.command_mem}m -XX:ParallelGCThreads={threads}" \
 		SplitNCigarReads \
 		-R {params.ref} \
 		-I {input.bam} \
-		--CREATE_INDEX true \
+		--create-output-bam-index true \
 		-O {output.bam} > {log} 2>&1
 		"""
 
@@ -136,7 +136,7 @@ rule NCigarReads_sort:
 	resources:
 		mem_mb=resource['resource']['medium']['mem_mb']
 	container:
-		config["sambamba_1.0.1"]
+		container_image["sambamba_1.0.1"]
 	shell:
 		"""
 		mkdir -p {params.tmpdir} && \
@@ -158,7 +158,6 @@ rule base_reca_librator:
 	log:
 		"{outpath}/02_map/logs/{sample}.recal_data.log"
 	params:
-		gatk=config['gatk_current_using'],
 		ref=config['reference'],
 		dbsnp138=config['dbsnp138'],
 		g1000_known_indels=config['g1000_known_indels'],
@@ -169,7 +168,7 @@ rule base_reca_librator:
 	resources:
 		mem_mb=resource['resource']['very_high']['mem_mb']
 	container:
-		config["gatk_4.1.8.1"]
+		container_image["gatk_4.1.8.1"]
 	shell:
 		"""
 		gatk --java-options "-Xms{params.command_mem}m -XX:ParallelGCThreads={threads}" \
@@ -193,7 +192,6 @@ rule apply_bqsr:
 		"{outpath}/02_map/logs/{sample}.applyBQSR.log"
 	params:
 		ref=config['reference'],
-		gatk=config['gatk_current_using'],
 		prefix="{outpath}/02_map/05_apply_bqsr/{sample}",
 		command_mem=lambda wildcards, resources, threads: (resources.mem_mb * threads - 2000)
 	threads:
@@ -201,7 +199,7 @@ rule apply_bqsr:
 	resources:
 		mem_mb=resource['resource']['very_high']['mem_mb']
 	container:
-		config["gatk_4.1.8.1"]
+		container_image["gatk_4.1.8.1"]
 	shell:
 		"""
 		gatk --java-options "-Xms{params.command_mem}m -XX:ParallelGCThreads={threads}" \
@@ -210,7 +208,7 @@ rule apply_bqsr:
 		-O {output.bam} \
 		-R {params.ref} \
 		--use-original-qualities \
-		--create-output-bam-index true
+		--create-output-bam-index true \
 		--bqsr-recal-file {input.table} > {log} 2>&1
 		"""
 
@@ -226,7 +224,6 @@ rule apply_bqsr_stat:
 		"{outpath}/02_map/logs/{sample}.flagstat.log"
 	params:
 		ref=config['reference'],
-		gatk=config['gatk_current_using'],
 		prefix="{outpath}/02_map/05_apply_bqsr/{sample}",
 		command_mem=lambda wildcards, resources, threads: (resources.mem_mb * threads - 2000)
 	threads:
@@ -234,12 +231,12 @@ rule apply_bqsr_stat:
 	resources:
 		mem_mb=resource['resource']['high']['mem_mb']
 	container:
-		config["samtools_1.20"]
+		container_image["samtools_1.20"]
 	shell:
 		"""
 		samtools flagstat {input.bam} > {output.flag}
 		samtools stats {input.bam} > {output.stat}
-		samtools idxstat {input.bam} > {output.idxstat}
+		samtools idxstats {input.bam} > {output.idxstat}
 		"""
 		
 rule multiqc_mapping:
@@ -260,8 +257,8 @@ rule multiqc_mapping:
 			sample=Sample
 		)
 	output:
-		report_map="{outpath}/02_map/multiqc_report_map.html",
-		data_dir="{outpath}/02_map/06_stats/multiqc_data"
+		report_map="{outpath}/02_map/00_multiqc_report_map.html",
+		data_dir="{outpath}/02_map/06_stats"
 	params:
 		outdir="{outpath}/02_map",
 		title="Mapping Quality Report"
@@ -270,14 +267,13 @@ rule multiqc_mapping:
 	resources:
 		mem_mb=resource['resource']['low']['mem_mb']
 	container:
-		config['multiqc_1.22.3']
+		container_image['multiqc_1.22.3']
 	shell:
 		"""
 		multiqc \
 			--outdir {params.outdir} \
 			--title "{params.title}" \
-			--filename multiqc_report_map.html \
+			--filename 00_multiqc_report_map.html \
 			--data-dir {output.data_dir} \
-			--force \
-			{params.outdir}
+			--force
 		"""

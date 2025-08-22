@@ -16,7 +16,7 @@ rule haplotypecaller:
 	resources:
 		mem_mb=resource['resource']['very_high']['mem_mb']
 	container:
-		config["gatk_4.1.8.1"]
+		container_image["gatk_4.1.8.1"]
 	shell:
 		"""
 		gatk --java-options "-Xms{params.command_mem}m -XX:ParallelGCThreads={threads}" \
@@ -47,7 +47,6 @@ rule mergevcfs:
 		vcf_gz="{outpath}/03_variants/haplotypecaller/02_merge/{sample}.vcf.gz",
 		vcf_tbi="{outpath}/03_variants/haplotypecaller/02_merge/{sample}.vcf.gz.tbi"
 	params:
-		gatk=config['gatk_current_using'],
 		input_args=lambda wildcards, input: " ".join(f"--INPUT {vcf}" for vcf in input.vcf),
 		command_mem=lambda wildcards, resources, threads: (resources.mem_mb * threads - 1000)
 	threads:
@@ -55,7 +54,7 @@ rule mergevcfs:
 	resources:
 		mem_mb=resource['resource']['medium']['mem_mb']
 	container:
-		config["gatk_4.1.8.1"]
+		container_image["gatk_4.1.8.1"]
 	shell:
 		'''
 		gatk --java-options "-Xms{params.command_mem}m -XX:ParallelGCThreads={threads}" \
@@ -69,7 +68,7 @@ rule haplotypecaller_anno:
 		vcf_gz="{outpath}/03_variants/haplotypecaller/02_merge/{sample}.vcf.gz",
 		vcf_tbi="{outpath}/03_variants/haplotypecaller/02_merge/{sample}.vcf.gz.tbi"
 	output:
-		vcf_anno="{outpath}/03_variants/haplotypecaller/03_annotation/{sample}.anno.{ref_version}_multianno.txt"
+		vcf_anno="{outpath}/03_variants/haplotypecaller/03_annotation/{sample}.anno.{ref_version}_multianno.vcf"
 	params:
 		ref_version=config['ref_version'],
 		annovar_dir=config['annovar_dir'],
@@ -81,7 +80,7 @@ rule haplotypecaller_anno:
 	resources:
 		mem_mb=resource['resource']['high']['mem_mb']
 	container:
-		config["terra_perl_anno"]
+		container_image["terra_perl_anno"]
 	shell:
 		"""
 		perl {params.annovar_dir}/table_annovar.pl \
@@ -98,17 +97,27 @@ rule haplotypecaller_anno:
 
 rule haplotypecaller_summary:
 	input:
-		expand("{outpath}/03_variants/haplotypecaller/03_annotation/{sample}.anno.{ref_version}_multianno.txt",
+		expand("{outpath}/03_variants/haplotypecaller/03_annotation/{sample}.anno.{ref_version}_multianno.vcf",
 		outpath=Outpath,
 		sample=Sample,
 		ref_version=Ref_version)
 	output:
-		"{outpath}/03_variants/haplotypecaller/summary.txt"
+		"{outpath}/03_variants/haplotypecaller/variantqc.html"
+	log:
+		"{outpath}/03_variants/logs/haplotypecaller_summary.log"
+	params:
+		ref=config['reference'],
+		input_args=lambda wildcards, input: " ".join(f"-V:{sample} {i}" for sample,i in zip(Sample,input))
 	threads:
-		resource['resource']['low']['threads']
+		resource['resource']['medium']['threads']
 	resources:
-		mem_mb=resource['resource']['low']['mem_mb']
+		mem_mb=resource['resource']['medium']['mem_mb']
+	container:
+		container_image["variantqc_1.3.87"]
 	shell:
 		"""
-		echo "haplotypecaller step is finished" > {output}
+		java -jar /app/DISCVRSeq.jar VariantQC \
+		-R {params.ref} \
+		{params.input_args} \
+		-O {output} > {log} 2>&1
 		"""
